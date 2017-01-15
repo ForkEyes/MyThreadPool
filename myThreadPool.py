@@ -9,7 +9,7 @@ workerStop = object()
 
 class ThreadPool(object):
 	
-	worker = 0
+	workerCount = 0 # 当前没有关闭的线程数
 
 	def __init__(self, max):
 		self.queue = Queue(0)
@@ -26,11 +26,11 @@ class ThreadPool(object):
 
 	def start(self):
 		# '尽最大努力'创建线程去执行任务
-		while self.worker < min(self.max, self.queue.qsize()):
+		while self.workerCount < min(self.max, self.queue.qsize()):
 			self.startWorker()	
 
 	def startWorker(self):
-		self.worker += 1
+		self.workerCount += 1
 		t = threading.Thread(target=self._worker)
 		t.start()
 	
@@ -60,7 +60,12 @@ class ThreadPool(object):
 		else:
 			threadList.remove(thread)
 		
-
+	def stop(self):
+		'''关闭线程'''
+		while self.workerCount:
+			self.queue.put(workerStop)
+			self.workerCount -= 1
+			
 def show(i):
 	print i
 	time.sleep(5)
@@ -70,3 +75,4 @@ for i in xrange(50):
 	pool.callInTread(show, i) # 创建50个任务,存放到队列中
 
 pool.start() # 开启
+pool.stop() # 关闭
